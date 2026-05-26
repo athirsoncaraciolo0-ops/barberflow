@@ -23,8 +23,7 @@ export function AppointmentModal({
     clients,
     services,
     barbers,
-    addAppointment,
-    updateAppointment,
+    syncFromDatabase,
   } = useBarberFlowStore();
 
   const firstClient = clients[0]?.id ?? "";
@@ -68,7 +67,7 @@ export function AppointmentModal({
 
   if (!open) return null;
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!clientId || !serviceId || !barberId || !date || !time) {
@@ -84,13 +83,23 @@ export function AppointmentModal({
       time,
     };
 
-    const result = appointment
-      ? updateAppointment(appointment.id, payload)
-      : addAppointment(payload);
+    const response = await fetch(
+      appointment ? `/api/appointments/${appointment.id}` : "/api/appointments",
+      {
+        method: appointment ? "PUT" : "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    const result = await response.json();
 
     setMessage(result.message);
 
     if (result.success) {
+      await syncFromDatabase();
       onClose();
       onSuccess?.();
     }

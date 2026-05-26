@@ -1,0 +1,66 @@
+CREATE TABLE IF NOT EXISTS "BusinessSettings" (
+  "id" TEXT PRIMARY KEY,
+  "productName" TEXT NOT NULL,
+  "businessName" TEXT NOT NULL,
+  "slogan" TEXT NOT NULL,
+  "whatsapp" TEXT NOT NULL,
+  "initials" TEXT NOT NULL,
+  "themePresetId" TEXT NOT NULL,
+  "primaryColor" TEXT NOT NULL,
+  "backgroundColor" TEXT NOT NULL,
+  "foregroundColor" TEXT NOT NULL,
+  "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS "Barber" (
+  "id" TEXT PRIMARY KEY,
+  "name" TEXT NOT NULL,
+  "specialty" TEXT NOT NULL,
+  "phone" TEXT NOT NULL DEFAULT '',
+  "active" BOOLEAN NOT NULL DEFAULT true,
+  "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS "Client" (
+  "id" TEXT PRIMARY KEY,
+  "name" TEXT NOT NULL,
+  "phone" TEXT NOT NULL,
+  "notes" TEXT,
+  "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS "Service" (
+  "id" TEXT PRIMARY KEY,
+  "name" TEXT NOT NULL,
+  "price" DOUBLE PRECISION NOT NULL,
+  "durationMinutes" INTEGER NOT NULL,
+  "active" BOOLEAN NOT NULL DEFAULT true,
+  "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS "Appointment" (
+  "id" TEXT PRIMARY KEY,
+  "date" TEXT NOT NULL,
+  "time" TEXT NOT NULL,
+  "status" TEXT NOT NULL,
+  "barberId" TEXT NOT NULL,
+  "clientId" TEXT NOT NULL,
+  "serviceId" TEXT NOT NULL,
+  "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  CONSTRAINT "Appointment_barberId_fkey" FOREIGN KEY ("barberId") REFERENCES "Barber"("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT "Appointment_clientId_fkey" FOREIGN KEY ("clientId") REFERENCES "Client"("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT "Appointment_serviceId_fkey" FOREIGN KEY ("serviceId") REFERENCES "Service"("id") ON DELETE RESTRICT ON UPDATE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS "FinancialEntry" (
+  "id" TEXT PRIMARY KEY,
+  "type" TEXT NOT NULL,
+  "description" TEXT NOT NULL,
+  "amount" DOUBLE PRECISION NOT NULL,
+  "date" TEXT NOT NULL,
+  "scope" TEXT NOT NULL,
+  "barberId" TEXT,
+  "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

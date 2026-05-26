@@ -22,8 +22,7 @@ function applyThemeNow(theme: {
 export default function ConfiguracoesPage() {
   const {
     businessSettings,
-    updatePublicBusinessSettings,
-    updateAdvancedBusinessSettings,
+    syncFromDatabase,
   } = useBarberFlowStore();
 
   const [businessName, setBusinessName] = useState("");
@@ -55,14 +54,30 @@ export default function ConfiguracoesPage() {
     }, 500);
   }
 
-  function savePublicSettings(event: React.FormEvent<HTMLFormElement>) {
+  async function savePublicSettings(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const result = updatePublicBusinessSettings({
-      businessName: businessName.trim(),
-      slogan: slogan.trim(),
-      whatsapp: whatsapp.trim(),
+    const response = await fetch("/api/settings", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        ...businessSettings,
+        businessName: businessName.trim(),
+        slogan: slogan.trim(),
+        whatsapp: whatsapp.trim(),
+        primaryColor: businessSettings.theme.primary,
+        backgroundColor: businessSettings.theme.background,
+        foregroundColor: businessSettings.theme.foreground,
+      }),
     });
+
+    const result = await response.json();
+
+    if (result.success) {
+      await syncFromDatabase();
+    }
 
     finishSave(result.message, true);
   }
@@ -80,7 +95,7 @@ export default function ConfiguracoesPage() {
     setMessage("Área avançada liberada.");
   }
 
-  function applyPreset(presetId: string) {
+  async function applyPreset(presetId: string) {
     const preset = themePresets.find((item) => item.id === presetId);
     if (!preset) return;
 
@@ -92,21 +107,52 @@ export default function ConfiguracoesPage() {
 
     applyThemeNow(theme);
 
-    updateAdvancedBusinessSettings({
-      initials: initials.trim().toUpperCase() || businessSettings.initials || "BF",
-      themePresetId: preset.id,
-      theme,
+    const response = await fetch("/api/settings", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        ...businessSettings,
+        initials: initials.trim().toUpperCase() || businessSettings.initials || "BF",
+        themePresetId: preset.id,
+        primaryColor: theme.primary,
+        backgroundColor: theme.background,
+        foregroundColor: theme.foreground,
+      }),
     });
 
-    finishSave(`Tema aplicado: ${preset.name}`, true);
+    const result = await response.json();
+
+    if (result.success) {
+      await syncFromDatabase();
+    }
+
+    finishSave(result.success ? `Tema aplicado: ${preset.name}` : result.message, true);
   }
 
-  function saveAdvancedSettings(event: React.FormEvent<HTMLFormElement>) {
+  async function saveAdvancedSettings(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const result = updateAdvancedBusinessSettings({
-      initials: initials.trim().toUpperCase() || "BF",
+    const response = await fetch("/api/settings", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        ...businessSettings,
+        initials: initials.trim().toUpperCase() || "BF",
+        primaryColor: businessSettings.theme.primary,
+        backgroundColor: businessSettings.theme.background,
+        foregroundColor: businessSettings.theme.foreground,
+      }),
     });
+
+    const result = await response.json();
+
+    if (result.success) {
+      await syncFromDatabase();
+    }
 
     finishSave(result.message, true);
   }

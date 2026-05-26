@@ -11,12 +11,13 @@ type ClientModalProps = {
 };
 
 export function ClientModal({ open, client, onClose }: ClientModalProps) {
-  const { addClient, updateClient } = useBarberFlowStore();
+  const syncFromDatabase = useBarberFlowStore((state) => state.syncFromDatabase);
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [notes, setNotes] = useState("");
   const [message, setMessage] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const isEditing = Boolean(client);
 
@@ -31,7 +32,7 @@ export function ClientModal({ open, client, onClose }: ClientModalProps) {
 
   if (!open) return null;
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!name.trim() || !phone.trim()) {
@@ -39,28 +40,43 @@ export function ClientModal({ open, client, onClose }: ClientModalProps) {
       return;
     }
 
-    const payload = {
-      name: name.trim(),
-      phone: phone.trim(),
-      notes: notes.trim() || undefined,
-    };
+    setSaving(true);
+    setMessage("");
 
-    const result = client ? updateClient(client.id, payload) : addClient(payload);
+    const response = await fetch(
+      client ? `/api/clients/${client.id}` : "/api/clients",
+      {
+        method: client ? "PUT" : "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name,
+          phone,
+          notes,
+        }),
+      }
+    );
+
+    const result = await response.json();
 
     if (!result.success) {
       setMessage(result.message);
+      setSaving(false);
       return;
     }
 
+    await syncFromDatabase();
+    setSaving(false);
     onClose();
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-3 backdrop-blur-md sm:items-center">
-      <div className="w-full max-w-xl rounded-[2rem] border border-[#d4af37]/25 bg-[#101010] p-5 shadow-2xl shadow-black/60">
+      <div className="w-full max-w-xl rounded-[2rem] border border-[var(--bf-primary)]/25 bg-[#101010] p-5 shadow-2xl shadow-black/60">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.35em] text-[#d4af37]">
+            <p className="text-xs font-bold uppercase tracking-[0.35em] text-[var(--bf-primary)]">
               {isEditing ? "Editar cliente" : "Novo cliente"}
             </p>
             <h2 className="mt-2 text-2xl font-black">
@@ -83,7 +99,7 @@ export function ClientModal({ open, client, onClose }: ClientModalProps) {
             <input
               value={name}
               onChange={(event) => setName(event.target.value)}
-              className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none focus:border-[#d4af37]/60"
+              className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none focus:border-[var(--bf-primary)]/60"
             />
           </label>
 
@@ -93,7 +109,7 @@ export function ClientModal({ open, client, onClose }: ClientModalProps) {
               value={phone}
               onChange={(event) => setPhone(event.target.value)}
               placeholder="5581999999999"
-              className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none focus:border-[#d4af37]/60"
+              className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none focus:border-[var(--bf-primary)]/60"
             />
           </label>
 
@@ -103,7 +119,7 @@ export function ClientModal({ open, client, onClose }: ClientModalProps) {
               value={notes}
               onChange={(event) => setNotes(event.target.value)}
               rows={4}
-              className="w-full resize-none rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none focus:border-[#d4af37]/60"
+              className="w-full resize-none rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none focus:border-[var(--bf-primary)]/60"
             />
           </label>
 
@@ -122,8 +138,15 @@ export function ClientModal({ open, client, onClose }: ClientModalProps) {
               Cancelar
             </button>
 
-            <button className="rounded-2xl bg-[#d4af37] px-5 py-4 font-black text-black shadow-lg shadow-[#d4af37]/20">
-              {isEditing ? "Salvar alteração" : "Salvar cliente"}
+            <button
+              disabled={saving}
+              className="rounded-2xl bg-[var(--bf-primary)] px-5 py-4 font-black text-black shadow-lg disabled:opacity-50"
+            >
+              {saving
+                ? "Salvando..."
+                : isEditing
+                  ? "Salvar alteração"
+                  : "Salvar cliente"}
             </button>
           </div>
         </form>

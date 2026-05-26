@@ -1,7 +1,6 @@
 "use client";
 
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 import { appointments as initialAppointments } from "@/data/appointments";
 import { barbers as initialBarbers } from "@/data/barbers";
 import { clients as initialClients } from "@/data/clients";
@@ -26,6 +25,8 @@ type StoreResult = {
 };
 
 type BarberFlowStore = {
+  isDatabaseSynced: boolean;
+  syncFromDatabase: () => Promise<StoreResult>;
   businessSettings: BusinessSettings;
   clients: Client[];
   services: Service[];
@@ -88,15 +89,66 @@ const defaultBusinessSettings: BusinessSettings = {
   },
 };
 
-export const useBarberFlowStore = create<BarberFlowStore>()(
-  persist(
-    (set, get) => ({
+export const useBarberFlowStore = create<BarberFlowStore>((set, get) => ({
+      isDatabaseSynced: false,
       businessSettings: defaultBusinessSettings,
       clients: initialClients,
       services: initialServices,
       barbers: initialBarbers,
       appointments: initialAppointments,
       financialEntries: [],
+
+      syncFromDatabase: async () => {
+        try {
+          const response = await fetch("/api/bootstrap", {
+            cache: "no-store",
+          });
+
+          if (!response.ok) {
+            return {
+              success: false,
+              message: "Não foi possível carregar dados do banco.",
+            };
+          }
+
+          const data = await response.json();
+
+          set((state) => ({
+            ...state,
+            isDatabaseSynced: true,
+            businessSettings: data.businessSettings
+              ? {
+                  productName: data.businessSettings.productName,
+                  businessName: data.businessSettings.businessName,
+                  slogan: data.businessSettings.slogan,
+                  whatsapp: data.businessSettings.whatsapp,
+                  initials: data.businessSettings.initials,
+                  themePresetId: data.businessSettings.themePresetId,
+                  theme: {
+                    primary: data.businessSettings.primaryColor,
+                    background: data.businessSettings.backgroundColor,
+                    foreground: data.businessSettings.foregroundColor,
+                  },
+                }
+              : state.businessSettings,
+            barbers: data.barbers ?? state.barbers,
+            clients: data.clients ?? state.clients,
+            services: data.services ?? state.services,
+            appointments: data.appointments ?? state.appointments,
+            financialEntries: data.financialEntries ?? state.financialEntries,
+          }));
+
+          return {
+            success: true,
+            message: "Dados sincronizados com o banco.",
+          };
+        } catch {
+          return {
+            success: false,
+            message: "Erro ao sincronizar com o banco.",
+          };
+        }
+      },
 
       updatePublicBusinessSettings: (data) => {
         set((state) => ({
@@ -473,43 +525,4 @@ export const useBarberFlowStore = create<BarberFlowStore>()(
       cancelAppointment: (id) => get().updateAppointmentStatus(id, "cancelled"),
       completeAppointment: (id) => get().updateAppointmentStatus(id, "completed"),
       restoreAppointment: (id) => get().updateAppointmentStatus(id, "scheduled"),
-    }),
-    {
-      name: "barberflow-store",
-      version: 3,
-      migrate: (persistedState) => {
-        const state = persistedState as Partial<BarberFlowStore>;
-
-        return {
-          ...state,
-          businessSettings: {
-            ...defaultBusinessSettings,
-            ...(state.businessSettings ?? {}),
-            theme: {
-              ...defaultBusinessSettings.theme,
-              ...(state.businessSettings?.theme ?? {}),
-            },
-          },
-          financialEntries: state.financialEntries ?? [],
-        } as BarberFlowStore;
-      },
-      merge: (persistedState, currentState) => {
-        const state = persistedState as Partial<BarberFlowStore>;
-
-        return {
-          ...currentState,
-          ...state,
-          businessSettings: {
-            ...defaultBusinessSettings,
-            ...(state.businessSettings ?? {}),
-            theme: {
-              ...defaultBusinessSettings.theme,
-              ...(state.businessSettings?.theme ?? {}),
-            },
-          },
-          financialEntries: state.financialEntries ?? currentState.financialEntries,
-        };
-      },
-    }
-  )
-);
+}));

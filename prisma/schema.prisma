@@ -1,0 +1,83 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model BusinessSettings {
+  id              String   @id @default(cuid())
+  productName     String
+  businessName    String
+  slogan          String
+  whatsapp        String
+  initials        String
+  themePresetId   String
+  primaryColor    String
+  backgroundColor String
+  foregroundColor String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Barber {
+  id           String   @id @default(cuid())
+  name         String
+  specialty    String
+  phone        String
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  appointments Appointment[]
+}
+
+model Client {
+  id           String   @id @default(cuid())
+  name         String
+  phone        String
+  notes        String?
+  createdAt    DateTime @default(now())
+
+  appointments Appointment[]
+}
+
+model Service {
+  id               String   @id @default(cuid())
+  name             String
+  price            Float
+  durationMinutes  Int
+  active           Boolean  @default(true)
+  createdAt        DateTime @default(now())
+
+  appointments Appointment[]
+}
+
+model Appointment {
+  id         String   @id @default(cuid())
+  date       String
+  time       String
+  status     String
+
+  barberId   String
+  clientId   String
+  serviceId  String
+
+  barber     Barber  @relation(fields: [barberId], references: [id])
+  client     Client  @relation(fields: [clientId], references: [id])
+  service    Service @relation(fields: [serviceId], references: [id])
+
+  createdAt  DateTime @default(now())
+}
+
+model FinancialEntry {
+  id          String   @id @default(cuid())
+  type        String
+  description String
+  amount      Float
+  date        String
+  scope       String
+  barberId    String?
+  createdAt   DateTime @default(now())
+}

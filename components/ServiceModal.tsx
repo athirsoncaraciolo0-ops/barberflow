@@ -11,13 +11,14 @@ type ServiceModalProps = {
 };
 
 export function ServiceModal({ open, service, onClose }: ServiceModalProps) {
-  const { addService, updateService } = useBarberFlowStore();
+  const syncFromDatabase = useBarberFlowStore((state) => state.syncFromDatabase);
 
   const [name, setName] = useState("");
   const [price, setPrice] = useState("0");
   const [durationMinutes, setDurationMinutes] = useState("30");
   const [active, setActive] = useState(true);
   const [message, setMessage] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const isEditing = Boolean(service);
 
@@ -33,34 +34,47 @@ export function ServiceModal({ open, service, onClose }: ServiceModalProps) {
 
   if (!open) return null;
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const payload = {
-      name: name.trim(),
-      price: Number(price),
-      durationMinutes: Number(durationMinutes),
-      active,
-    };
+    setSaving(true);
+    setMessage("");
 
-    const result = service
-      ? updateService(service.id, payload)
-      : addService(payload);
+    const response = await fetch(
+      service ? `/api/services/${service.id}` : "/api/services",
+      {
+        method: service ? "PUT" : "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name,
+          price: Number(price),
+          durationMinutes: Number(durationMinutes),
+          active,
+        }),
+      }
+    );
+
+    const result = await response.json();
 
     if (!result.success) {
       setMessage(result.message);
+      setSaving(false);
       return;
     }
 
+    await syncFromDatabase();
+    setSaving(false);
     onClose();
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-3 backdrop-blur-md sm:items-center">
-      <div className="w-full max-w-xl rounded-[2rem] border border-[#d4af37]/25 bg-[#101010] p-5 shadow-2xl shadow-black/60">
+      <div className="w-full max-w-xl rounded-[2rem] border border-[var(--bf-primary)]/25 bg-[#101010] p-5 shadow-2xl shadow-black/60">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.35em] text-[#d4af37]">
+            <p className="text-xs font-bold uppercase tracking-[0.35em] text-[var(--bf-primary)]">
               {isEditing ? "Editar serviço" : "Novo serviço"}
             </p>
             <h2 className="mt-2 text-2xl font-black">
@@ -84,7 +98,7 @@ export function ServiceModal({ open, service, onClose }: ServiceModalProps) {
               value={name}
               onChange={(event) => setName(event.target.value)}
               placeholder="Ex: Corte degradê"
-              className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none focus:border-[#d4af37]/60"
+              className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none focus:border-[var(--bf-primary)]/60"
             />
           </label>
 
@@ -97,7 +111,7 @@ export function ServiceModal({ open, service, onClose }: ServiceModalProps) {
                 step="1"
                 value={price}
                 onChange={(event) => setPrice(event.target.value)}
-                className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none focus:border-[#d4af37]/60"
+                className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none focus:border-[var(--bf-primary)]/60"
               />
             </label>
 
@@ -109,7 +123,7 @@ export function ServiceModal({ open, service, onClose }: ServiceModalProps) {
                 step="5"
                 value={durationMinutes}
                 onChange={(event) => setDurationMinutes(event.target.value)}
-                className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none focus:border-[#d4af37]/60"
+                className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none focus:border-[var(--bf-primary)]/60"
               />
             </label>
           </div>
@@ -139,8 +153,15 @@ export function ServiceModal({ open, service, onClose }: ServiceModalProps) {
               Cancelar
             </button>
 
-            <button className="rounded-2xl bg-[#d4af37] px-5 py-4 font-black text-black shadow-lg shadow-[#d4af37]/20">
-              {isEditing ? "Salvar alteração" : "Salvar serviço"}
+            <button
+              disabled={saving}
+              className="rounded-2xl bg-[var(--bf-primary)] px-5 py-4 font-black text-black shadow-lg disabled:opacity-50"
+            >
+              {saving
+                ? "Salvando..."
+                : isEditing
+                  ? "Salvar alteração"
+                  : "Salvar serviço"}
             </button>
           </div>
         </form>

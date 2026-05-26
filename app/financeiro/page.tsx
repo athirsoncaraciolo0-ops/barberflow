@@ -15,8 +15,7 @@ export default function FinanceiroPage() {
     services,
     barbers,
     financialEntries,
-    addFinancialEntry,
-    removeFinancialEntry,
+    syncFromDatabase,
   } = useBarberFlowStore();
 
   const [selectedBarberId, setSelectedBarberId] = useState("all");
@@ -154,21 +153,30 @@ export default function FinanceiroPage() {
     services,
   ]);
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const result = addFinancialEntry({
-      type,
-      description,
-      amount: Number(amount),
-      date,
-      scope,
-      barberId: scope === "barber" ? barberId : undefined,
+    const response = await fetch("/api/financial-entries", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        type,
+        description,
+        amount: Number(amount),
+        date,
+        scope,
+        barberId: scope === "barber" ? barberId : undefined,
+      }),
     });
+
+    const result = await response.json();
 
     setMessage(result.message);
 
     if (result.success) {
+      await syncFromDatabase();
       setDescription("");
       setAmount("");
       setType("expense");
@@ -178,9 +186,17 @@ export default function FinanceiroPage() {
     }
   }
 
-  function handleRemove(id: string) {
-    const result = removeFinancialEntry(id);
+  async function handleRemove(id: string) {
+    const response = await fetch(`/api/financial-entries/${id}`, {
+      method: "DELETE",
+    });
+
+    const result = await response.json();
     setMessage(result.message);
+
+    if (result.success) {
+      await syncFromDatabase();
+    }
   }
 
   return (

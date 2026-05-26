@@ -26,9 +26,7 @@ export default function AgendaPage() {
     clients,
     services,
     barbers,
-    completeAppointment,
-    cancelAppointment,
-    restoreAppointment,
+    syncFromDatabase,
   } = useBarberFlowStore();
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -83,19 +81,33 @@ export default function AgendaPage() {
     setSelectedAppointment(null);
   }
 
-  function handleComplete(id: string) {
-    const result = completeAppointment(id);
+  async function updateStatus(id: string, status: string) {
+    const response = await fetch(`/api/appointments/${id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ status }),
+    });
+
+    const result = await response.json();
     setMessage(result.message);
+
+    if (result.success) {
+      await syncFromDatabase();
+    }
+  }
+
+  function handleComplete(id: string) {
+    updateStatus(id, "completed");
   }
 
   function handleCancel(id: string) {
-    const result = cancelAppointment(id);
-    setMessage(result.message);
+    updateStatus(id, "cancelled");
   }
 
   function handleRestore(id: string) {
-    const result = restoreAppointment(id);
-    setMessage(result.message);
+    updateStatus(id, "scheduled");
   }
 
   return (

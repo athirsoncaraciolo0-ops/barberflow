@@ -8,7 +8,7 @@ import { useBarberFlowStore } from "@/store/useBarberFlowStore";
 import type { Client } from "@/types";
 
 export default function ClientesPage() {
-  const { clients, removeClient } = useBarberFlowStore();
+  const { clients, syncFromDatabase } = useBarberFlowStore();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
@@ -24,9 +24,17 @@ export default function ClientesPage() {
     setModalOpen(true);
   }
 
-  function handleRemove(id: string) {
-    const result = removeClient(id);
+  async function handleRemove(id: string) {
+    const response = await fetch(`/api/clients/${id}`, {
+      method: "DELETE",
+    });
+
+    const result = await response.json();
     setMessage(result.message);
+
+    if (result.success) {
+      await syncFromDatabase();
+    }
   }
 
   return (

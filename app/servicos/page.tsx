@@ -8,7 +8,7 @@ import { useBarberFlowStore } from "@/store/useBarberFlowStore";
 import type { Service } from "@/types";
 
 export default function ServicosPage() {
-  const { services, removeService } = useBarberFlowStore();
+  const { services, syncFromDatabase } = useBarberFlowStore();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
@@ -24,9 +24,17 @@ export default function ServicosPage() {
     setModalOpen(true);
   }
 
-  function handleRemove(id: string) {
-    const result = removeService(id);
+  async function handleRemove(id: string) {
+    const response = await fetch(`/api/services/${id}`, {
+      method: "DELETE",
+    });
+
+    const result = await response.json();
     setMessage(result.message);
+
+    if (result.success) {
+      await syncFromDatabase();
+    }
   }
 
   return (

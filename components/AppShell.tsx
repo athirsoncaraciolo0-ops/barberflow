@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { AppointmentModal } from "@/components/AppointmentModal";
+import { DatabaseSync } from "@/components/DatabaseSync";
+import { ClearLocalStorage } from "@/components/ClearLocalStorage";
 import { useBarberFlowStore } from "@/store/useBarberFlowStore";
 
 const menuItems = [
@@ -45,6 +47,15 @@ export function AppShell({
     document.body.style.background = theme.background;
     document.body.style.color = theme.foreground;
   }, [theme]);
+
+  async function logout() {
+    await fetch("/api/auth/logout", {
+      method: "POST",
+    });
+
+    router.push("/login");
+    router.refresh();
+  }
 
   return (
     <main
@@ -128,6 +139,9 @@ export function AppShell({
         onClose={() => setAppointmentModalOpen(false)}
         onSuccess={() => router.push("/agenda")}
       />
+
+      <DatabaseSync />
+      <ClearLocalStorage />
     </main>
   );
 }
