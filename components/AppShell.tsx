@@ -4,8 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { AppointmentModal } from "@/components/AppointmentModal";
-import { DatabaseSync } from "@/components/DatabaseSync";
 import { ClearLocalStorage } from "@/components/ClearLocalStorage";
+import { DatabaseSync } from "@/components/DatabaseSync";
 import { PWAInstallButton } from "@/components/PWAInstallButton";
 import { useBarberFlowStore } from "@/store/useBarberFlowStore";
 
@@ -97,12 +97,23 @@ export function AppShell({
               </div>
             </div>
 
-            <button
-              onClick={() => setAppointmentModalOpen(true)}
-              className="rounded-2xl bg-[var(--bf-primary)] px-4 py-3 text-sm font-black text-black shadow-lg"
-            >
-              Novo agendamento
-            </button>
+            <div className="flex flex-wrap gap-3">
+              <PWAInstallButton />
+
+              <button
+                onClick={() => setAppointmentModalOpen(true)}
+                className="rounded-2xl bg-[var(--bf-primary)] px-4 py-3 text-sm font-black text-black shadow-lg"
+              >
+                Novo agendamento
+              </button>
+
+              <button
+                onClick={logout}
+                className="rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-3 text-sm font-black text-white"
+              >
+                Sair
+              </button>
+            </div>
           </div>
 
           <nav className="mt-5 flex gap-2 overflow-x-auto pb-1">
