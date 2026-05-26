@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AppointmentModal } from "@/components/AppointmentModal";
 import { DatabaseSync } from "@/components/DatabaseSync";
 import { ClearLocalStorage } from "@/components/ClearLocalStorage";
+import { PWAInstallButton } from "@/components/PWAInstallButton";
 import { useBarberFlowStore } from "@/store/useBarberFlowStore";
 
 const menuItems = [
