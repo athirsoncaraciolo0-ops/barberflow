@@ -1,9 +1,14 @@
-export type AppointmentStatus = "scheduled" | "confirmed" | "completed" | "cancelled";
+export type AppointmentStatus =
+  | "scheduled"
+  | "confirmed"
+  | "completed"
+  | "cancelled";
 
 export type Barber = {
   id: string;
   name: string;
   specialty: string;
+  phone?: string;
   active: boolean;
 };
 
@@ -19,7 +24,7 @@ export type Client = {
   id: string;
   name: string;
   phone: string;
-  notes?: string;
+  notes?: string | null;
 };
 
 export type Appointment = {
@@ -37,22 +42,6 @@ export type Verse = {
   reference: string;
 };
 
-export type CashTransactionType = "income" | "expense";
-
-export type CashTransactionScope = "all" | "barber";
-
-export type CashTransaction = {
-  id: string;
-  type: CashTransactionType;
-  scope: CashTransactionScope;
-  barberId?: string;
-  description: string;
-  amount: number;
-  date: string;
-  createdAt: string;
-};
-
-
 export type FinancialEntryType = "income" | "expense";
 
 export type FinancialEntryScope = "all" | "barber";
@@ -64,30 +53,7 @@ export type FinancialEntry = {
   amount: number;
   date: string;
   scope: FinancialEntryScope;
-  barberId?: string;
-};
-
-
-export type ThemePreset = {
-  id: string;
-  name: string;
-  description: string;
-  primary: string;
-  secondary: string;
-  background: string;
-  panel: string;
-  foreground: string;
-  accent: string;
-};
-
-export type BusinessSettings = {
-  productName: string;
-  businessName: string;
-  slogan: string;
-  whatsapp: string;
-  initials: string;
-  themePresetId: string;
-  customPrimary: string;
+  barberId?: string | null;
 };
 
 export type ThemePreset = {
